@@ -19,7 +19,7 @@ model = Transformer(
     intermediate_dim=intermediate_dim
 ).to(device)
 
-checkpoint = torch.load("checkpoints/latest.pt", map_location=device, weights_only=False)
+checkpoint = torch.load("mini-llm-latest.pt", map_location=device, weights_only=False)
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
@@ -45,5 +45,5 @@ def generate(prompt, max_new_tokens=100, temperature=0.8, top_k=50):
 
     return decode(input_ids[0].tolist())
 
-prompt = "The future of artificial intelligence"
-print(generate(prompt))
+prompt = input("Enter first few words: ")
+print(generate(prompt,temperature=1.0))
