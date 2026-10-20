@@ -6,3 +6,5 @@ train.bin
 checkpoints/
 val.bin
 wandb/
+mini-llm-latest.pt
+.vscode/
