@@ -51,10 +51,20 @@ class Transformer(nn.Module):
         self.blocks = nn.ModuleList(blocks)
 
     def forward(self, x, mask=None):
-        x= self.embedding(x)
+        batch_size, seq_len = x.shape
+
+        causal = causal_mask(seq_len).to(x.device)  # (1, L, L)
+
+        if mask is not None:
+            padding = mask[:, None, None, :].bool()  # (B, 1, 1, L)
+            causal = causal[:, None, :, :] & padding  # (B, 1, L, L)
+
+        x = self.embedding(x)
+
         for block in self.blocks:
-            x = block(x, mask)
-        x= self.final_norm(x)
+            x = block(x, causal)
+
+        x = self.final_norm(x)
         logits = self.lm_head(x)
 
         return logits
