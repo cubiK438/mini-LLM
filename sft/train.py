@@ -221,7 +221,7 @@ for epoch in range(start_epoch, start_epoch + num_epochs):
             val_loss = evaluate(
                 model, val_subset_loader, device, criterion
             )
-        print(f"Validation loss (subset): {val_loss:.4f}")
+            print(f"Validation loss (subset): {val_loss:.4f}")
     val_loss = evaluate(model, val_loader, device, criterion)
     print(f"Epoch {epoch + 1} complete | Validation loss: {val_loss:.4f}")
 
