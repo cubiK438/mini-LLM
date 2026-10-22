@@ -56,8 +56,8 @@ class Transformer(nn.Module):
         causal = causal_mask(seq_len).to(x.device)  # (1, L, L)
 
         if mask is not None:
-            padding = mask[:, None, None, :].bool()  # (B, 1, 1, L)
-            causal = causal[:, None, :, :] & padding  # (B, 1, L, L)
+            padding = mask[:, None, :].bool()  # (B, L, L)
+            causal = causal & padding               # (B, L, L)
 
         x = self.embedding(x)
 
