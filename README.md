@@ -161,4 +161,87 @@ This was a short smoke test for performance estimation, not the final pretrainin
 
 ### Precision experiments
 
-Separate FP32 and BF16 training runs were conducted to
+Separate FP32 and BF16 training runs were conducted to investigate training behavior under different numerical precisions. Metrics were recorded for both runs.
+
+### Pretraining outcome
+
+The training log records a lowest validation loss of **3.3178** across the pretraining runs. Training was resumed across separate runs, with checkpoints used to continue the experiment.
+
+The original log records 61,707 epochs; this terminology should be verified against the training configuration before interpreting it as the number of full dataset passes or optimization steps.
+
+## Baseline Evaluation
+
+On 10 October 2026, the pretrained model was evaluated before supervised fine-tuning to establish a baseline for subsequent post-training experiments.
+
+The evaluation covered ARC-Easy, ARC-Challenge, HellaSwag, and WinoGrande.
+
+| Benchmark | Samples | Accuracy | Standard error |
+|---|---:|---:|---:|
+| ARC-Easy | 2,376 | 50.29% | 1.03 percentage points |
+| ARC-Challenge | 1,172 | 20.90% | 1.19 percentage points |
+| HellaSwag | 10,042 | 27.32% | 0.44 percentage points |
+| WinoGrande | 1,267 | 51.46% | 1.40 percentage points |
+
+The accuracy values use the recorded `acc,none` metric. Standard errors are expressed in percentage points.
+
+These results represent the model's recorded baseline before supervised fine-tuning. They provide a reference for future experiments, but comparisons with other models require consistent evaluation settings and metrics.
+
+Benchmark accuracy and free-form generation quality measure different aspects of model behavior. These results do not establish that the model can generate reliable or coherent conversational responses.
+
+## Development Timeline
+
+The following timeline summarizes the major milestones recorded during development.
+
+| Date | Milestone |
+|---|---|
+| June 2026 | Studied web-data filtration, deduplication, MinHash, LSH, and Jaccard similarity |
+| 3–5 June | Built a basic BPE tokenizer and trained a Hugging Face ByteLevelBPE tokenizer |
+| June 2026 | Studied Transformer fundamentals and the text-to-token training pipeline |
+| 6–8 July | Implemented attention, RoPE, RMSNorm, KV caching, and SwiGLU |
+| 9 August | Integrated the data pipeline and tested it on 1,000 documents |
+| 15–16 August | Conducted initial training, FP32, and BF16 experiments |
+| 29 August | Ran an NVIDIA L4 smoke test and recorded throughput and memory usage |
+| 31 August | Completed preparation of the approximately 2.02-billion-token training dataset |
+| September | Completed the recorded pretraining runs and tracked validation loss |
+| 10 October | Evaluated the pretrained model on four downstream benchmarks |
+
+### Collaboration
+
+The initial development involved BNS Kartheek and Harsha Nerella. Harsha's development log records contributions to data deduplication and normalization experiments, along with work on understanding data-filtering techniques. The log states that Harsha stopped working on the project in August, after which development continued independently.
+
+## Limitations
+
+Mini-LLM is a small experimental model trained under a limited compute and data budget.
+
+Known limitations include:
+
+- Incoherent or repetitive free-form generations.
+- Limited instruction-following ability.
+- No claim of competitive general-purpose language-model performance.
+- Tokenizer and vocabulary changes that require careful checkpoint-compatibility checks.
+- Performance measurements that depend on hardware, workload, and implementation.
+- Benchmark results that do not establish production readiness.
+
+The repository preserves the implementation and experiments, including unsuccessful or incomplete areas, as part of the research and learning process.
+
+## Future Work
+
+This repository focuses on implementing and pretraining a language model from scratch.
+
+A separate research project will investigate post-training and preference optimization using established pretrained models. The intended direction is to compare:
+
+- Supervised Fine-Tuning (SFT).
+- Reinforcement Learning from Human Feedback (RLHF).
+- Direct Preference Optimization (DPO).
+
+The goal is to conduct controlled experiments using comparable datasets, evaluation methods, and training configurations, with selected experiments repeated on models of different sizes.
+
+Keeping the projects separate will make it easier to distinguish language-model pretraining experiments from research on alignment and preference optimization.
+
+## Acknowledgements
+
+Thanks to Harsha Nerella for contributions to the early data-processing and model-development work.
+
+## License
+
+See the repository's `LICENSE` file for the applicable terms.
