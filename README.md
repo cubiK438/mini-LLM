@@ -1,82 +1,164 @@
-# mini-llm
+# Mini-LLM
 
-# Building and Aligning a Small Language Model from Scratch
+**A decoder-only Transformer language model implemented and pretrained from scratch in PyTorch.**
 
-> *Understanding language models by building every component ourselves.*
+Mini-LLM is an experimental language-modeling project focused on understanding and implementing the pipeline behind a small pretrained language model. It covers text preprocessing, byte-level BPE tokenization, Transformer architecture, training-data preparation, autoregressive pretraining, performance profiling, and downstream evaluation.
 
----
+The project began with studying how raw internet data is filtered and prepared. It progressed through tokenizer development, implementation of Transformer components, data-pipeline construction, GPU performance experiments, pretraining, and benchmark evaluation.
 
-## Why this project?
+> **Project status:** Experimental pretrained language model. Text-generation quality remains limited, and outputs can be incoherent or repetitive. This project is not a production-ready conversational assistant.
 
-The recent progress in Large Language Models has made powerful AI systems more accessible than ever. However, most projects built around these models begin with an already-trained foundation and focus on fine-tuning or inference. While this approach is practical, it often hides the complexity behind how these models are actually created.
+## Model Specifications
 
-This project takes a different path.
+| Property | Value |
+|---|---|
+| Architecture | Decoder-only Transformer |
+| Approximate parameter count | 100.97 million |
+| Hidden dimension | 768 |
+| Transformer layers | 5 |
+| Attention heads | 12 |
+| Feed-forward dimension | 3,072 |
+| Maximum context length | 1,024 tokens |
+| Tokenizer | Byte-level BPE |
+| Original vocabulary size | 35,000 tokens |
+| Training corpus | FineWeb-Edu |
+| Training objective | Autoregressive next-token prediction |
+| Framework | PyTorch |
 
-Our goal is to build a modern GPT-style language model from the ground up—not because it is the easiest approach, but because it provides the deepest understanding of the entire development pipeline. Every major component, from tokenization and transformer architecture to training, instruction tuning, and alignment, is treated as something to be implemented, studied, and improved rather than simply used.
+The implementation includes multi-head attention, Rotary Position Embeddings (RoPE), RMSNorm, SwiGLU feed-forward layers, and KV caching.
 
-Rather than viewing an LLM as a black box, we want to understand the engineering decisions, mathematical foundations, and trade-offs that shape its behavior.
+## Data Preparation
 
----
+An important part of this project was understanding how raw internet text becomes usable language-model training data.
 
-## More than just another language model
+### Data filtration and quality
 
-This repository is not intended to compete with frontier-scale models, nor is it an attempt to recreate them at a smaller scale. Instead, it is an exploration of how modern language models are built and how alignment techniques influence their capabilities.
+The development and learning process covered the following techniques:
 
-By working with a model in the **100M–120M parameter range**, experimentation becomes practical while still preserving many of the architectural characteristics found in today's larger models. This allows us to iterate quickly, conduct controlled experiments, and better understand how individual design choices affect overall performance.
+- English-language filtering and content-quality filtering.
+- Removal of unwanted content and spam-related material.
+- Shingling and Jaccard similarity.
+- MinHash and Locality-Sensitive Hashing (LSH) for approximate deduplication.
+- C4-style text filters.
+- Statistical text-quality filters, including line-length and character-distribution checks.
+- Perplexity-based and classifier-based filtering concepts.
 
-The project is therefore equal parts engineering exercise and research platform.
+These techniques informed the project's understanding of web-scale dataset preparation. The development log does not establish that every listed filtering technique was applied to the final training corpus.
 
----
+### Deduplication
 
-## Our philosophy
+Deduplication was explored and implemented using techniques including:
 
-Modern AI research moves quickly, and it's easy to rely on high-level libraries that abstract away the difficult parts. While these abstractions are incredibly useful, they can also make it difficult to develop an intuition for what happens beneath the surface.
+- Four-gram shingling.
+- Jaccard similarity.
+- MinHash.
+- Locality-Sensitive Hashing.
 
-We believe that implementing these systems ourselves leads to a much deeper understanding than simply assembling existing components.
+The goal was to understand how similar documents can be detected efficiently without comparing every document against every other document directly.
 
-Throughout this project we aim to:
+## Tokenizer
 
-* Build before abstracting.
-* Understand before optimizing.
-* Experiment before drawing conclusions.
-* Document not only what works, but also what doesn't.
+Two approaches were explored:
 
-The journey is just as valuable as the final model.
+1. A basic BPE tokenizer implemented from scratch.
+2. A Hugging Face ByteLevelBPE tokenizer.
 
----
+The Hugging Face tokenizer was trained on approximately 2 GB of FineWeb data with a vocabulary size of 35,000 tokens.
 
-## A focus on alignment
+The recorded experiment achieved approximately **1.4 tokens per word**. A separate experiment with the custom BPE implementation achieved approximately 1.25 tokens per word on a much smaller dataset of roughly 1 MB. Since these experiments used different dataset sizes, they should not be interpreted as a controlled tokenizer comparison.
 
-Building a language model is only part of the story.
+### Tokenization pipeline
 
-Modern language models are expected to be helpful, follow instructions, and produce responses that align with human preferences. These capabilities are not obtained during pretraining alone—they emerge through additional stages of fine-tuning and alignment.
+```text
+Raw text
+   ↓
+Text preprocessing
+   ↓
+Byte-level BPE tokenization
+   ↓
+Token IDs
+   ↓
+Binary token dataset (train.bin)
+   ↓
+Memory-mapped data access
+   ↓
+Training batches
+   ↓
+Transformer pretraining
+```
 
-One of the primary goals of this project is to investigate **Direct Preference Optimization (DPO)** as an alignment technique for smaller language models.
+The final data-preparation process produced approximately **2.02 billion tokens**, stored in a binary training file of roughly 4 GB.
 
-Rather than assuming alignment methods scale down effectively, we want to measure their impact directly and answer a simple question:
+## Transformer Implementation
 
-> **How much does preference alignment improve a language model in the 100M–120M parameter range?**
+The Transformer was implemented incrementally, with individual components tested during development.
 
-The resulting models will be evaluated through quantitative benchmarks as well as qualitative comparisons to understand where alignment helps—and where it falls short.
+### Multi-head attention
 
----
+Implemented the attention mechanism in PyTorch and added unit tests for the attention implementation.
 
-## What this repository represents
+### Rotary Position Embeddings (RoPE)
 
-This repository is an open record of the project's development.
+Implemented RoPE and verified its integration with multi-head attention.
 
-It contains experiments, implementation details, training infrastructure, successes, failures, and lessons learned while building a language model from scratch.
+### RMSNorm
 
-As development progresses, the repository will continue to evolve with improved implementations, training logs, evaluation results, and research findings.
+Implemented RMSNorm and compared its execution time with LayerNorm.
 
-The first stable release (v1.0) will include the complete training pipeline, aligned models, benchmarks, and comprehensive technical documentation.
+| Normalization | Recorded execution time |
+|---|---:|
+| RMSNorm | 0.06727 seconds |
+| LayerNorm | 0.10948 seconds |
 
----
+In the recorded experiment, RMSNorm was approximately **1.63× faster** than LayerNorm. This is a measurement from the tested setup, not a universal performance guarantee.
 
-## Current Status
+### KV cache
 
-🚧 **This project is actively under development.**
+Implemented key-value caching to reduce repeated computation during autoregressive inference.
 
-Many components are still being implemented, refined, and tested. Expect frequent changes, refactoring, and experimentation as we work toward the first stable release.
+| Configuration | Recorded execution time |
+|---|---:|
+| Without KV cache | 0.03679 seconds |
+| With KV cache | 0.01050 seconds |
 
-If you're interested in language models, alignment research, or understanding how modern LLMs are built from first principles, we hope you'll enjoy following the journey.
+The measured speedup was approximately **3.50×** in the tested setup.
+
+### SwiGLU feed-forward network
+
+Implemented a SwiGLU feed-forward block using the SiLU activation. The block uses separate gate and value projections, multiplies their outputs, and passes the result through a final projection.
+
+The implementation also explored removing biases. A recorded experiment found a 0.14% difference in token count between the tested variants. This is an observation from that experiment, not a general conclusion about bias removal.
+
+## Pretraining
+
+The model was pretrained on approximately 2.02 billion tokens prepared from FineWeb-Edu.
+
+The training implementation includes:
+
+- Tokenized datasets and memory-mapped data loading.
+- Batching and causal attention masks.
+- Next-token prediction with cross-entropy loss.
+- AdamW optimization.
+- Learning-rate scheduling and warmup.
+- Gradient accumulation and gradient clipping.
+- Checkpoint saving and restoration.
+- Validation-loss tracking and training metrics.
+
+### GPU smoke test
+
+A 20-step smoke test was performed on an NVIDIA L4 GPU to estimate throughput and memory requirements.
+
+| Metric | Recorded result |
+|---|---:|
+| Model size | 100.97M parameters |
+| Training steps | 20 |
+| Total runtime | 7.42 seconds |
+| Throughput | 11,028.69 tokens/second |
+| Peak memory | 3,771.35 MB |
+| Final logged training loss | 8.30747 |
+
+This was a short smoke test for performance estimation, not the final pretraining run.
+
+### Precision experiments
+
+Separate FP32 and BF16 training runs were conducted to
